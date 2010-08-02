@@ -1,0 +1,3 @@
+evbsc - beanstalkclient library embeded into libev
+
+requires libbeanstalkclient (http://github.com/bergundy/libbeanstalkclient)
