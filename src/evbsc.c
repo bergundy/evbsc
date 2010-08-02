@@ -13,19 +13,27 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "evbsc.h"
 
 static void write_ready(EV_P_ ev_io *w, int revents);
 static void read_ready(EV_P_ ev_io *w, int revents);
 static void evbsc_after_connect(evbsc *client);
 
-evbsc *evbsc_new( struct ev_loop *loop, const char *host, const char *port, error_callback_p_t onerror,
+static void buffer_fill_cb(bsc *bsclient)
+{
+    evbsc *client = (evbsc *)bsclient->data;
+    ev_io_start((client)->loop, &((client)->ww));
+}
+
+evbsc *evbsc_new( struct ev_loop *loop, const char *host, const char *port,
+                  const char *default_tube, error_callback_p_t onerror,
                   size_t buf_len, size_t vec_len, size_t vec_min, char **errorstr )
 {
     evbsc *client   = NULL;
     bsc   *bsclient = NULL;
 
-    if ( ( bsclient = bsc_new(host, port, onerror, buf_len, vec_len, vec_min, errorstr) ) == NULL )
+    if ( ( bsclient = bsc_new(host, port, default_tube, onerror, buf_len, vec_len, vec_min, errorstr) ) == NULL )
         return NULL;
 
     if ( ( client = (evbsc *)malloc(sizeof(evbsc)) ) == NULL ) {
@@ -33,10 +41,13 @@ evbsc *evbsc_new( struct ev_loop *loop, const char *host, const char *port, erro
         return NULL;
     }
 
+    bsclient->buffer_fill_cb = buffer_fill_cb;
     bsclient->data   = client;
     client->loop     = loop;
     client->bsclient = bsclient;
     evbsc_after_connect(client);
+    if (strcmp(default_tube, BSC_DEFAULT_TUBE) != 0) 
+        ev_io_start((client)->loop, &((client)->ww));
     return client;
 }
 
@@ -63,7 +74,7 @@ static void evbsc_after_connect(evbsc *client)
     client->ww.data = client;
     ev_io_start(client->loop, &(client->rw));
 
-    if (!IOQ_EMPTY(client->bsclient->outq))
+    if (!AQUEUE_EMPTY(client->bsclient->outq))
         ev_io_start(client->loop, &(client->ww));
 }
 
@@ -84,7 +95,7 @@ static void write_ready(EV_P_ ev_io *w, int revents)
 {
     evbsc *client = (evbsc *)w->data;
     bsc_write(client->bsclient);
-    if (IOQ_EMPTY(client->bsclient->outq))
+    if (AQUEUE_EMPTY(client->bsclient->outq))
         ev_io_stop(loop, &(client->ww));
 
     return;

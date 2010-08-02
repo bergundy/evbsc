@@ -18,16 +18,11 @@
 #include <ev.h>
 #include <beanstalkclient.h>
 
-#define EVBSC_ENQ_CMD(cmd, client, callback, callback_data, on_error, ...) do {                 \
-    BSC_ENQ_CMD(cmd, (client)->bsclient, (callback), (callback_data), on_error, ##__VA_ARGS__); \
-    ev_io_start((client)->loop, &((client)->ww));                                               \
-} while (false)
-
-#define evbsc_new_w_defaults(loop, host, port, onerror, errorstr)   \
-    ( evbsc_new( (loop), (host), (port), (onerror),                 \
-        BSC_DEFAULT_BUFFER_SIZE,                                    \
-        BSC_DEFAULT_VECTOR_SIZE,                                    \
-        BSC_DEFAULT_VECTOR_MIN,                                     \
+#define evbsc_new_w_defaults(loop, host, port, def_tube, onerror, errorstr)     \
+    ( evbsc_new( (loop), (host), (port), (def_tube), (onerror),                 \
+        BSC_DEFAULT_BUFFER_SIZE,                                                \
+        BSC_DEFAULT_VECTOR_SIZE,                                                \
+        BSC_DEFAULT_VECTOR_MIN,                                                 \
         (errorstr) ) )
 
 struct _evbsc {
@@ -39,7 +34,8 @@ struct _evbsc {
 
 typedef struct _evbsc evbsc;
 
-evbsc *evbsc_new( struct ev_loop *loop, const char *host, const char *port, error_callback_p_t onerror,
+evbsc *evbsc_new( struct ev_loop *loop, const char *host, const char *port,
+                  const char *default_tube, error_callback_p_t onerror,
                   size_t buf_len, size_t vec_len, size_t vec_min, char **errorstr );
 
 void evbsc_free(evbsc *client);
