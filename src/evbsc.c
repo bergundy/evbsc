@@ -20,10 +20,11 @@ static void write_ready(EV_P_ ev_io *w, int revents);
 static void read_ready(EV_P_ ev_io *w, int revents);
 static void evbsc_after_connect(evbsc *client);
 
-static void buffer_fill_cb(bsc *bsclient)
+static int buffer_fill_cb(bsc *bsclient)
 {
     evbsc *client = (evbsc *)bsclient->data;
     ev_io_start((client)->loop, &((client)->ww));
+    return 1;
 }
 
 evbsc *evbsc_new( struct ev_loop *loop, const char *host, const char *port,

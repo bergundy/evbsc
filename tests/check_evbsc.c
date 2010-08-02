@@ -13,7 +13,7 @@
 #include <string.h>
 #include "evbsc.h"
 
-char *host = "localhost", *port = BSP_DEFAULT_PORT;
+const char *host = "localhost", *port = BSP_DEFAULT_PORT;
 char *exp_data;
 static bsc_error_t bsc_error;
 
@@ -42,7 +42,7 @@ void reserve_cb(bsc *client, struct bsc_reserve_info *info)
         "bsp_reserve: response.code != BSP_RESERVE_RES_RESERVED");
     fail_if(info->response.bytes != strlen(exp_data),
         "bsp_reserve: response.bytes != exp_bytes");
-    fail_if(strcmp(info->response.data, exp_data) != 0,
+    fail_if(strcmp((const char *)info->response.data, exp_data) != 0,
         "bsp_reserve: got invalid data");
 
     bsc_error = bsc_delete(client, delete_cb, NULL, info->response.id);
@@ -57,7 +57,7 @@ void delete_cb(bsc *client, struct bsc_delete_info *info)
         "bsp_delete: response.code != BSP_DELETE_RES_DELETED");
 
     if (info->user_data) {
-        exp_data = "bababuba12341234";
+        exp_data = (char *)"bababuba12341234";
         bsc_error = bsc_put(client, put_cb, client, 1, 0, 10, strlen(exp_data), exp_data, false);
         fail_if(bsc_error != BSC_ERROR_NONE, "bsc_put failed (%d)", bsc_error);
         bsc_error = bsc_reserve(client, reserve_cb, NULL, -1);
@@ -126,7 +126,7 @@ START_TEST(test_evbsc_small_vec) {
     bsc_error = bsc_ignore(client, ignore_cb, NULL, "default");
     fail_if(bsc_error != BSC_ERROR_NONE, "bsc_ignore failed (%d)", bsc_error );
 
-    exp_data = "baba";
+    exp_data = (char *)"baba";
     bsc_error = bsc_put(client, put_cb, NULL, 1, 0, 10, strlen(exp_data), exp_data, false);
     fail_if(bsc_error != BSC_ERROR_NONE, "bsc_put failed (%d)", bsc_error);
 
@@ -182,7 +182,7 @@ END_TEST
 /*****************************************************************************************************************/ 
 /*                                                      test 3                                                   */
 /*****************************************************************************************************************/ 
-char *reconnect_test_port = "16666";
+const char *reconnect_test_port = "16666";
 static char spawn_cmd[200];
 static char kill_cmd[200];
 
