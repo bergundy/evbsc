@@ -51,7 +51,7 @@ void reserve_cb(bsc *client, struct bsc_reserve_info *info)
 
 void delete_cb(bsc *client, struct bsc_delete_info *info)
 {
-    evbsc *evclient = (evbsc *)client->data;
+    evbsc *evclient = (evbsc *)client;
 
     fail_if( info->response.code != BSP_DELETE_RES_DELETED,
         "bsp_delete: response.code != BSP_DELETE_RES_DELETED");
@@ -100,7 +100,7 @@ START_TEST(test_evbsc_small_vec) {
     struct ev_loop *loop = ev_default_loop(0);
     evclient = evbsc_new(loop, host, port, BSC_DEFAULT_TUBE, onerror, 16, 12, 4, &errstr);
     fail_if( evclient == NULL, "evbsc_new: %s", errstr);
-    bsc   *client = evclient->bsclient;
+    bsc   *client = &(evclient->bsclient);
 
     bsc_error = bsc_use(client, use_cb, NULL, "test");
     fail_if(bsc_error != BSC_ERROR_NONE, "bsc_use failed (%d)", bsc_error );
@@ -144,7 +144,7 @@ END_TEST
 
 void ignore_cb2(bsc *client, struct bsc_ignore_info *info)
 {
-    evbsc *evclient = (evbsc *)client->data;
+    evbsc *evclient = (evbsc *)client;
 
     fail_if( info->response.code != BSP_IGNORE_RES_NOT_IGNORED,
         "bsc_ignore: response.code != BSP_IGNORE_RES_NOT_IGNORED");
@@ -162,7 +162,7 @@ START_TEST(test_evbsc_defaults) {
     struct ev_loop *loop = ev_default_loop(0);
     evclient = evbsc_new_w_defaults(loop, host, port, BSC_DEFAULT_TUBE, onerror, &errstr);
     fail_if( evclient == NULL, "evbsc_new: %s", errstr);
-    bsc   *client = evclient->bsclient;
+    bsc   *client = &(evclient->bsclient);
 
     bsc_error = bsc_ignore(client, ignore_cb2, NULL, "default");
     fail_if(bsc_error != BSC_ERROR_NONE, "bsc_ignore failed (%d)", bsc_error );
@@ -195,7 +195,7 @@ static void reconnect(bsc *client, bsc_error_t error)
 {
     char *errorstr;
     system(spawn_cmd);
-    evbsc *evclient = (evbsc *)client->data;
+    evbsc *evclient = (evbsc *)client;
 
     if (error == BSC_ERROR_INTERNAL) {
         fail("critical error: recieved BSC_ERROR_INTERNAL, quitting\n");
@@ -221,7 +221,7 @@ START_TEST(test_evbsc_reconnect) {
     system(spawn_cmd);
     evclient = evbsc_new( loop, host, reconnect_test_port, "baba", reconnect, 16, 12, 4, &errstr);
     fail_if( evclient == NULL, "evbsc_new: %s", errstr);
-    bsc *client = evclient->bsclient;
+    bsc *client = &(evclient->bsclient);
 
     bsc_error = bsc_ignore(client, reconnect_test_ignore_cb, NULL, "default");
     fail_if(bsc_error != BSC_ERROR_NONE, "bsc_ignore failed (%d)", bsc_error );

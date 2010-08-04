@@ -26,10 +26,10 @@
         (errorstr) ) )
 
 struct _evbsc {
+    bsc             bsclient;
     ev_io           rw;
     ev_io           ww;
     struct ev_loop *loop;
-    bsc            *bsclient;
 };
 
 typedef struct _evbsc evbsc;
