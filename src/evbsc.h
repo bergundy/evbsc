@@ -18,6 +18,9 @@
 #include <ev.h>
 #include <beanstalkclient.h>
 
+#define BSCIFY(evc) ( (bsc *)evc )
+#define EVBSCIFY(c) ( (evbsc *)c )
+
 #define evbsc_new_w_defaults(loop, host, port, def_tube, onerror, errorstr)     \
     ( evbsc_new( (loop), (host), (port), (def_tube), (onerror),                 \
         BSC_DEFAULT_BUFFER_SIZE,                                                \

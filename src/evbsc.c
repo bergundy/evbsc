@@ -51,8 +51,7 @@ evbsc *evbsc_new( struct ev_loop *loop, const char *host, const char *port,
 
 void evbsc_free(evbsc *client)
 {
-    bsc_free(&(client->bsclient));
-    free(client);
+    bsc_free(BSCIFY(client));
 }
 
 bool evbsc_connect(evbsc *client, char **errorstr)

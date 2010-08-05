@@ -221,7 +221,7 @@ START_TEST(test_evbsc_reconnect) {
     system(spawn_cmd);
     evclient = evbsc_new( loop, host, reconnect_test_port, "baba", reconnect, 16, 12, 4, &errstr);
     fail_if( evclient == NULL, "evbsc_new: %s", errstr);
-    bsc *client = &(evclient->bsclient);
+    bsc *client = BSCIFY(evclient);
 
     bsc_error = bsc_ignore(client, reconnect_test_ignore_cb, NULL, "default");
     fail_if(bsc_error != BSC_ERROR_NONE, "bsc_ignore failed (%d)", bsc_error );
