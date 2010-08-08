@@ -21,7 +21,7 @@ static bsc_error_t bsc_error;
 /*                                                      test 1                                                   */
 /*****************************************************************************************************************/ 
 
-void small_vec_cb(bsc *client, queue_node *node, void *data, size_t len);
+void small_vec_cb(bsc *client, cbq_node *node, void *data, size_t len);
 void put_cb(bsc *client, struct bsc_put_info *info);
 void reserve_cb(bsc *client, struct bsc_reserve_info *info);
 void delete_cb(bsc *client, struct bsc_delete_info *info);
