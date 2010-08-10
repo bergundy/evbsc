@@ -1,4 +1,4 @@
-LIBEVBSC_VERSION = 0:1:0
+LIBEVBSC_VERSION = 1:0:0
 
 lib_LTLIBRARIES     = libevbsc.la
 libevbsc_la_SOURCES = evbsc.c
