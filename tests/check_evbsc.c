@@ -3,7 +3,36 @@
  * @file   check_evbsc.c
  * @brief  test suite for evbsc library
  * @date   06/13/2010 05:58:28 PM
- * @author Roey Berman, (royb@walla.net.il), Walla!
+ * @author   Roey Berman, (roey.berman@gmail.com)
+ * @version  1.0
+ *
+ * Copyright (c) 2010, Roey Berman, (roeyb.berman@gmail.com)
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *    This product includes software developed by Roey Berman.
+ * 4. Neither the name of Roey Berman nor the
+ *    names of its contributors may be used to endorse or promote products
+ *    derived from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY ROEY BERMAN ''AS IS'' AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL ROEY BERMAN BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * =====================================================================================
  */
 
@@ -95,12 +124,12 @@ void ignore_cb(bsc *client, struct bsc_ignore_info *info)
 }
 
 START_TEST(test_evbsc_small_vec) {
-    char  *errstr = NULL;
+    char  errstr[BSC_ERRSTR_LEN];
     evbsc *evclient;
     struct ev_loop *loop = ev_default_loop(0);
-    evclient = evbsc_new(loop, host, port, BSC_DEFAULT_TUBE, onerror, 16, 12, 4, &errstr);
-    fail_if( evclient == NULL, "evbsc_new: %s", errstr);
-    bsc   *client = &(evclient->bsclient);
+    evclient = evbsc_new(loop, host, port, BSC_DEFAULT_TUBE, onerror, 16, 12, 4, errstr);
+    fail_if(evclient == NULL, "evbsc_new: %s", errstr);
+    bsc   *client = BSCIFY(evclient);
 
     bsc_error = bsc_use(client, use_cb, NULL, "test");
     fail_if(bsc_error != BSC_ERROR_NONE, "bsc_use failed (%d)", bsc_error );
@@ -139,110 +168,6 @@ START_TEST(test_evbsc_small_vec) {
 END_TEST
 
 /*****************************************************************************************************************/ 
-/*                                                      test 2                                                   */
-/*****************************************************************************************************************/ 
-
-void ignore_cb2(bsc *client, struct bsc_ignore_info *info)
-{
-    evbsc *evclient = (evbsc *)client;
-
-    fail_if( info->response.code != BSP_IGNORE_RES_NOT_IGNORED,
-        "bsc_ignore: response.code != BSP_IGNORE_RES_NOT_IGNORED");
-    fail_if( strcmp(client->watched_tubes->name, BSC_DEFAULT_TUBE) );
-    fail_if( client->watched_tubes->next != NULL);
-
-    if (info->user_data != NULL)
-        ev_unloop(evclient->loop, EVUNLOOP_ONE);
-}
-
-
-START_TEST(test_evbsc_defaults) {
-    evbsc *evclient;
-    char  *errstr = NULL;
-    struct ev_loop *loop = ev_default_loop(0);
-    evclient = evbsc_new_w_defaults(loop, host, port, BSC_DEFAULT_TUBE, onerror, &errstr);
-    fail_if( evclient == NULL, "evbsc_new: %s", errstr);
-    bsc   *client = &(evclient->bsclient);
-
-    bsc_error = bsc_ignore(client, ignore_cb2, NULL, "default");
-    fail_if(bsc_error != BSC_ERROR_NONE, "bsc_ignore failed (%d)", bsc_error );
-
-    bsc_error = bsc_ignore(client, ignore_cb2, NULL, "default");
-    fail_if(bsc_error != BSC_ERROR_NONE, "bsc_ignore failed (%d)", bsc_error );
-
-    bsc_error = bsc_ignore(client, ignore_cb2, client, "default");
-    fail_if(bsc_error != BSC_ERROR_NONE, "bsc_ignore failed (%d)", bsc_error );
-
-    ev_loop(loop, 0);
-
-    bsc_free(client);
-}
-END_TEST
-
-/*****************************************************************************************************************/ 
-/*                                                      test 3                                                   */
-/*****************************************************************************************************************/ 
-const char *reconnect_test_port = "16666";
-static char spawn_cmd[200];
-static char kill_cmd[200];
-
-void reconnect_test_ignore_cb(bsc *client, struct bsc_ignore_info *info)
-{
-    system(kill_cmd);
-}
-
-static void reconnect(bsc *client, bsc_error_t error)
-{
-    char *errorstr;
-    system(spawn_cmd);
-    evbsc *evclient = (evbsc *)client;
-
-    if (error == BSC_ERROR_INTERNAL) {
-        fail("critical error: recieved BSC_ERROR_INTERNAL, quitting\n");
-    }
-    else if (error == BSC_ERROR_SOCKET) {
-        if ( bsc_reconnect(client, &errorstr) ) {
-            fail_if( client->outq->used != 9, 
-                "after reconnect: nodes_used : %d/%d", client->outq->used, 9);
-
-            ev_unloop(evclient->loop, EVUNLOOP_ONE);
-            return;
-        }
-    }
-    fail("critical error: maxed out reconnect attempts, quitting\n");
-}
-
-START_TEST(test_evbsc_reconnect) {
-    evbsc *evclient;
-    char *errstr = NULL;
-    struct ev_loop *loop = ev_default_loop(0);
-    sprintf(spawn_cmd, "beanstalkd -p %s -d", reconnect_test_port);
-    sprintf(kill_cmd, "ps -ef|grep beanstalkd |grep '%s'| gawk '!/grep/ {print $2}'|xargs kill", reconnect_test_port);
-    system(spawn_cmd);
-    evclient = evbsc_new( loop, host, reconnect_test_port, "baba", reconnect, 16, 12, 4, &errstr);
-    fail_if( evclient == NULL, "evbsc_new: %s", errstr);
-    bsc *client = BSCIFY(evclient);
-
-    bsc_error = bsc_ignore(client, reconnect_test_ignore_cb, NULL, "default");
-    fail_if(bsc_error != BSC_ERROR_NONE, "bsc_ignore failed (%d)", bsc_error );
-    bsc_error = bsc_reserve(client, NULL, NULL, BSC_RESERVE_NO_TIMEOUT);
-    fail_if(bsc_error != BSC_ERROR_NONE, "bsc_reserve failed (%d)", bsc_error);
-    bsc_error = bsc_reserve(client, NULL, NULL, BSC_RESERVE_NO_TIMEOUT);
-    fail_if(bsc_error != BSC_ERROR_NONE, "bsc_reserve failed (%d)", bsc_error);
-    bsc_error = bsc_reserve(client, NULL, NULL, BSC_RESERVE_NO_TIMEOUT);
-    fail_if(bsc_error != BSC_ERROR_NONE, "bsc_reserve failed (%d)", bsc_error);
-    bsc_error = bsc_put(client, NULL, NULL, 1, 0, 10, strlen(kill_cmd), kill_cmd, false);
-    fail_if(bsc_error, "bsc_put failed (%d)", bsc_error);
-    bsc_error = bsc_put(client, NULL, NULL, 1, 0, 10, strlen(kill_cmd), kill_cmd, false);
-    fail_if(bsc_error, "bsc_put failed (%d)", bsc_error);
-
-    ev_loop(loop, 0);
-    system(kill_cmd);
-    bsc_free(client);
-}
-END_TEST
-
-/*****************************************************************************************************************/ 
 /*                                                  end of tests                                                 */
 /*****************************************************************************************************************/ 
 
@@ -252,8 +177,6 @@ Suite *local_suite(void)
     TCase *tc = tcase_create("evbsc");
 
     tcase_add_test(tc, test_evbsc_small_vec);
-    tcase_add_test(tc, test_evbsc_defaults);
-    tcase_add_test(tc, test_evbsc_reconnect);
 
     suite_add_tcase(s, tc);
     return s;
