@@ -42,15 +42,13 @@
 #include <string.h>
 #include "evbsc.h"
 
-const char *host = "localhost", *port = BSP_DEFAULT_PORT;
+const char *host = "localhost", *port = BSC_DEFAULT_PORT;
 char *exp_data;
 static bsc_error_t bsc_error;
 
 /*****************************************************************************************************************/ 
 /*                                                      test 1                                                   */
 /*****************************************************************************************************************/ 
-
-void small_vec_cb(bsc *client, cbq_node *node, void *data, size_t len);
 void put_cb(bsc *client, struct bsc_put_info *info);
 void reserve_cb(bsc *client, struct bsc_reserve_info *info);
 void delete_cb(bsc *client, struct bsc_delete_info *info);
@@ -62,13 +60,13 @@ void onerror(bsc *client, bsc_error_t error)
 
 void put_cb(bsc *client, struct bsc_put_info *info)
 {
-    fail_if(info->response.code != BSP_PUT_RES_INSERTED, "put_cb: info->code != BSP_PUT_RES_INSERTED");
+    fail_if(info->response.code != BSC_PUT_RES_INSERTED, "put_cb: info->code != BSC_PUT_RES_INSERTED");
 }
 
 void reserve_cb(bsc *client, struct bsc_reserve_info *info)
 {
-    fail_if(info->response.code != BSP_RESERVE_RES_RESERVED,
-        "bsp_reserve: response.code != BSP_RESERVE_RES_RESERVED");
+    fail_if(info->response.code != BSC_RESERVE_RES_RESERVED,
+        "bsp_reserve: response.code != BSC_RESERVE_RES_RESERVED");
     fail_if(info->response.bytes != strlen(exp_data),
         "bsp_reserve: response.bytes != exp_bytes");
     fail_if(strcmp((const char *)info->response.data, exp_data) != 0,
@@ -82,8 +80,8 @@ void delete_cb(bsc *client, struct bsc_delete_info *info)
 {
     evbsc *evclient = (evbsc *)client;
 
-    fail_if( info->response.code != BSP_DELETE_RES_DELETED,
-        "bsp_delete: response.code != BSP_DELETE_RES_DELETED");
+    fail_if( info->response.code != BSC_DELETE_RES_DELETED,
+        "bsp_delete: response.code != BSC_DELETE_RES_DELETED");
 
     if (info->user_data) {
         exp_data = (char *)"bababuba12341234";
@@ -98,16 +96,16 @@ void delete_cb(bsc *client, struct bsc_delete_info *info)
 
 void use_cb(bsc *client, struct bsc_use_info *info)
 {
-    fail_if( info->response.code != BSP_USE_RES_USING,
-        "bsp_use: response.code != BSP_USE_RES_USING");
+    fail_if( info->response.code != BSC_USE_RES_USING,
+        "bsp_use: response.code != BSC_USE_RES_USING");
     fail_if( strcmp(info->response.tube, info->request.tube),
         "bsp_use: response.tube != info->request.tube");
 }
 
 void watch_cb(bsc *client, struct bsc_watch_info *info)
 {
-    fail_if( info->response.code != BSP_RES_WATCHING,
-        "bsp_watch: response.code != BSP_RES_WATCHING");
+    fail_if( info->response.code != BSC_RES_WATCHING,
+        "bsp_watch: response.code != BSC_RES_WATCHING");
     fail_if( client->watched_tubes_count != info->response.count,
         "bsp_watch: watched_tubes_count != response.count" );
     fail_if( strcmp(client->watched_tubes->name, BSC_DEFAULT_TUBE) );
@@ -116,8 +114,8 @@ void watch_cb(bsc *client, struct bsc_watch_info *info)
 
 void ignore_cb(bsc *client, struct bsc_ignore_info *info)
 {
-    fail_if( info->response.code != BSP_RES_WATCHING,
-        "bsp_ignore: response.code != BSP_RES_WATCHING");
+    fail_if( info->response.code != BSC_RES_WATCHING,
+        "bsp_ignore: response.code != BSC_RES_WATCHING");
     fail_if( client->watched_tubes_count != info->response.count,
         "bsp_ignore: watched_tubes_count != response.count" );
     fail_if( strcmp(client->watched_tubes->name, "test") );

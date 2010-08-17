@@ -100,7 +100,7 @@ static void after_connect(bsc *self)
     if (strcmp(self->default_tube, BSC_DEFAULT_TUBE) != 0) 
         ev_io_start((client)->loop, &((client)->ww));
 
-    if (!AQUEUE_EMPTY(client->bsclient.outq))
+    if (!AQ_EMPTY(client->bsclient.outq))
         ev_io_start(client->loop, &(client->ww));
 }
 
@@ -115,7 +115,7 @@ static void write_ready(EV_P_ ev_io *w, int revents)
 {
     evbsc *client = (evbsc *)w->data;
     bsc_write(&(client->bsclient));
-    if (AQUEUE_EMPTY(client->bsclient.outq))
+    if (AQ_EMPTY(client->bsclient.outq))
         ev_io_stop(loop, &(client->ww));
 
     return;
