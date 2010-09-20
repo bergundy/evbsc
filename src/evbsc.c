@@ -52,8 +52,8 @@ static void before_diconnect(bsc *self);
 
 static int buffer_fill_cb(bsc *bsclient)
 {
-    evbsc *client = (evbsc *)bsclient;
-    ev_io_start((client)->loop, &((client)->ww));
+    evbsc *client = EVBSCIFY(bsclient);
+    ev_io_start(client->loop, &(client->ww));
     return 1;
 }
 
@@ -77,6 +77,8 @@ evbsc *evbsc_new(struct ev_loop *loop, const char *host, const char *port,
     BSCIFY(client)->post_connect_cb   = after_connect;
     BSCIFY(client)->pre_disconnect_cb = before_diconnect;
     client->loop                      = loop;
+    ev_init( &(client->rw), read_ready );
+    ev_init( &(client->ww), write_ready );
 
     after_connect(BSCIFY(client));
 
@@ -91,15 +93,14 @@ void evbsc_free(evbsc *client)
 static void after_connect(bsc *self)
 {
     evbsc *client = EVBSCIFY(self);
-    ev_io_init( &(client->rw), read_ready,  client->bsclient.fd, EV_READ  );
-    ev_io_init( &(client->ww), write_ready, client->bsclient.fd, EV_WRITE );
+    ev_io_set( &(client->rw), self->fd, EV_READ  );
+    ev_io_set( &(client->ww), self->fd, EV_WRITE );
     client->rw.data = client;
     client->ww.data = client;
     ev_io_start(client->loop, &(client->rw));
 
-    if (strcmp(self->default_tube, BSC_DEFAULT_TUBE) != 0) 
-        ev_io_start((client)->loop, &((client)->ww));
-
+    if (strcmp(self->default_tube, BSC_DEFAULT_TUBE) != 0)
+        ev_io_start(client->loop, &((client)->ww));
     if (!AQ_EMPTY(client->bsclient.outq))
         ev_io_start(client->loop, &(client->ww));
 }
@@ -113,18 +114,15 @@ static void before_diconnect(bsc *self)
 
 static void write_ready(EV_P_ ev_io *w, int revents)
 {
-    evbsc *client = (evbsc *)w->data;
-    bsc_write(&(client->bsclient));
-    if (AQ_EMPTY(client->bsclient.outq))
+    evbsc *client = EVBSCIFY(w->data);
+    bsc_write(BSCIFY(client));
+    if (AQ_EMPTY(BSCIFY(client)->outq))
         ev_io_stop(loop, &(client->ww));
-
-    return;
 }
 
 static void read_ready(EV_P_ ev_io *w, int revents)
 {
-    evbsc *client = (evbsc *)w->data;
-    bsc_read(&(client->bsclient));
+    bsc_read(BSCIFY(w->data));
 }
 
 #ifdef __cplusplus
